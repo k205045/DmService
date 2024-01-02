@@ -4,17 +4,27 @@ using System.Runtime.InteropServices;
 
 public class DmService
 {
-    public DmService(bool showError = false)
+    public DmService(int windowsWidth=960,int windowsHeight=540,bool showError = false,string? path=null)
     {
         Dm = new dmsoft();
-        SetPath();
+        if (path == null)
+        {
+            SetPath();
+        }
+        else
+        {
+            SetPath(path);
+        }
         SetDict();
         if (showError == false)
         {
             Dm.SetShowErrorMsg(0);
         }
-
+        _windowsHeight = windowsHeight;
+        _windowsWidth = windowsWidth;
     }
+    private int _windowsWidth;
+    private int _windowsHeight;
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
@@ -65,7 +75,7 @@ public class DmService
     }
     public bool IsDisplayDead(int sec = 5)
     {
-        return Dm.IsDisplayDead(0, 0, 960, 540, sec) == 1 ? true : false;
+        return Dm.IsDisplayDead(0, 0, _windowsWidth, _windowsHeight, sec) == 1 ? true : false;
     }
 
     public void Close(string windowName)
@@ -81,6 +91,10 @@ public class DmService
             SendMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
         }
     }
+    public bool BindWindow(int hwnd)
+    {
+        return Dm.BindWindow(hwnd, "gdi", "windows", "windows", 0) == 1 ? true : false;
+    }
 
     public void SetPath(string path)
     {
@@ -91,7 +105,7 @@ public class DmService
     {
         var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
         var path = baseDirectory + "\\Resources";
-        Console.WriteLine("path " + path);
+        //Console.WriteLine("path " + path);
         Dm.SetPath(path);
     }
     public void SetDict(string dict = "dm_soft")
@@ -99,7 +113,18 @@ public class DmService
         Dm.SetDict(0, dict + ".txt");
     }
 
+    public void Capture(string bmp)
+    {
+        int index = 0;
+        var currentFile = bmp + ".bmp";
+        while (File.Exists(Path.Combine(basePath, currentFile)))
+        {
+            index++;
+            currentFile = $"{bmp}{index}.bmp";
+        }
 
+        Dm.Capture(0, 0, 960, 540, currentFile);
+    }
 
     public string GetColor(int x, int y)
     {
@@ -109,7 +134,7 @@ public class DmService
 
     public bool FindStrB(string str, string colors, double sim = 0.7)
     {
-        return Dm.FindStr(0, 0, 960, 540, str, colors, sim, out intX, out intY) >= 0 ? true : false;
+        return Dm.FindStr(0, 0, _windowsWidth, _windowsHeight, str, colors, sim, out intX, out intY) >= 0 ? true : false;
     }
     public bool FindStrB(int x1, int y1, int x2, int y2, string str, string colors, double sim = 0.7)
     {
@@ -119,16 +144,16 @@ public class DmService
     {
         var bmp = ProcessBmpString(mybmps, traversal);
 
-        return Dm.FindPic(0, 0, 960, 540, bmp, "000000", sim, 0, out intX, out intY);
+        return Dm.FindPic(0, 0, _windowsWidth, _windowsHeight, bmp, "000000", sim, 0, out intX, out intY);
     }
     public bool FindPicB(string mybmps, bool click = false, double sim = 0.7, bool traversal = false)
     {
         var bmp = ProcessBmpString(mybmps, traversal);
-        var re = Dm.FindPic(0, 0, 960, 540, bmp, "000000", sim, 0, out intX, out intY) >= 0 ? true : false;
+        var re = Dm.FindPic(0, 0, _windowsWidth, _windowsHeight, bmp, "000000", sim, 0, out intX, out intY) >= 0 ? true : false;
         if (re && click)
         {
             MCS();
-        }
+        }   
         return re;
     }
     public bool FindPicB(int x1, int y1, int x2, int y2, string mybmps, bool click = false, double sim = 0.7, bool traversal = false)
@@ -154,7 +179,7 @@ public class DmService
         var tmptime = 0;
         while (true)
         {
-            if (Dm.FindPic(0, 0, 960, 540, bmp, "000000", sim, 0, out intX, out intY) >= 0)
+            if (Dm.FindPic(0, 0, _windowsWidth, _windowsHeight, bmp, "000000", sim, 0, out intX, out intY) >= 0)
             {
                 if (click)
                 {

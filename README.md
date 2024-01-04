@@ -15,7 +15,7 @@
 
 ## 使用方法
 
-若要在您的.NET專案中使用`DmService` DLL，請依照下列步驟進行：
+若要在您的.NET專案中使用`DmService` DLL，大漠3.1233須將專案設定成x86，然後依照下列步驟進行：
 
 **方法一：加入參考**
 
@@ -50,6 +50,81 @@
 
 **方法二：使用DLL**
    - 將本專案建置成DLL檔案，然後在你的應用程式中直接引用這個DLL。
+
+# 初始化
+```csharp
+DmService? dm = null;
+try
+{
+    //初始化dm時，需直接輸入視窗大小、圖片路徑、字典路徑、是否顯示錯誤訊息、
+    dm = new DmService();
+}
+catch (Exception e)
+{
+    Console.WriteLine("dm初始化失敗，代表沒有註冊大漠");
+    Console.ReadKey();
+}
+
+
+int hwnd = dm.FindWindow("lpClassName", "lpWindowName"); //找窗口句炳
+dm.BindWindow(hwnd); //輸入句柄並綁定
+```
+# 找圖
+- 所有圖片副檔名都得是bmp，故找圖不需要再寫.bmp
+## 一般找圖
+```csharp
+if (dm.FindPicB("圖片名稱"))
+{
+    //找到了
+    Console.WriteLine("找到 圖片名稱");
+
+    // dm.MCS()為多載方法
+    dm.MCS(); // 滑鼠移動至圖片、點擊、休息2秒
+    dm.MCS(5); // 滑鼠移動至圖片、點擊、休息5秒
+
+    dm.MCS(100, 100); // 滑鼠移動至100,100、點擊、休息2秒
+    dm.MCS(100, 100, 5); // 滑鼠移動至100,100、點擊、休息5秒
+}
+//沒找到往下執行
+Console.WriteLine("沒找到 圖片名稱");
+```
+## 持續找圖
+```csharp
+while (true)
+{
+    //隔一秒找一次圖片
+    if (dm.FindPicR("圖片1"))
+    {
+        //時間內沒找到圖片
+        Console.WriteLine("沒找到 圖片1");
+
+        //重來
+        continue;
+    }
+    //找到了往下執行
+    Console.WriteLine("找到圖片1，執行下一步");
+
+    //通常執行點擊剛剛找到的圖片
+    dm.MCS();
+
+    //隔一秒找一次圖片
+    if (dm.FindPicR("圖片2"))
+    {
+        //時間內沒找到圖片
+        Console.WriteLine("沒找到 圖片2");
+
+        //重來
+        continue;
+    }
+    //找到了往下執行
+    Console.WriteLine("找到圖片2，執行下一步");
+
+    //通常執行點擊剛剛找到的圖片
+    dm.MCS();
+
+    break;
+}
+```
 
 ### 如何解決找不到Dm插件的問題
 

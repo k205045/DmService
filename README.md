@@ -61,7 +61,8 @@ try
 }
 catch (Exception e)
 {
-    Console.WriteLine("dm初始化失敗，代表沒有註冊大漠");
+    //通常是被防毒刪除或沒有註冊
+    Console.WriteLine("dm初始化失敗");
     Console.ReadKey();
 }
 

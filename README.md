@@ -31,7 +31,7 @@
 3. **在您的專案中使用`DmService`**：
    - 在您的程式碼檔案中，新增對`DmService`命名空間的引用：
      ```csharp
-     using DmServiceNamespace; // 請替換為實際的命名空間。
+     using DmService; // 請替換為實際的命名空間。
      ```
    - 您可以透過繼承`DmService`來擴展功能：
      ```csharp
@@ -57,7 +57,7 @@ DmService? dm = null;
 try
 {
     //初始化dm時，需直接輸入視窗大小、圖片路徑、字典路徑、是否顯示錯誤訊息、
-    dm = new DmService();
+    dm = new DmService(1920,1080);
 }
 catch (Exception e)
 {

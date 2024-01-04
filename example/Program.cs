@@ -17,8 +17,7 @@
             }
             
 
-            int hwnd;//句柄
-            hwnd = dm.FindWindow("lpClassName", "lpWindowName"); //找窗口
+            int hwnd = dm.FindWindow("lpClassName", "lpWindowName"); //找窗口句炳
             dm.BindWindow(hwnd); //輸入句柄並綁定
 
             //注意，所有圖片都得是bmp，故找圖不需要再寫.bmp
@@ -29,7 +28,6 @@
                 //找到了
 
                 // dm.MCS()為多載方法
-
                 dm.MCS(); //預設 滑鼠移動圖片、點擊、休息2秒
                 dm.MCS(5); //預設 滑鼠移動圖片、點擊、休息5秒
 
@@ -37,6 +35,8 @@
                 dm.MCS(100, 100, 5); //預設 滑鼠移動至100,100、點擊、休息5秒
             }
             //沒找到往下執行
+
+
 
             while (true)
             {
@@ -65,7 +65,10 @@
             }
         }
 
-        public void 參數使用方法()
+        /// <summary>
+        /// 參數使用方法
+        /// </summary>
+        public void Func()
         {
             // 參數使用方法
             // 找圖方法的 traversal 設為true時候，會一次尋找"圖片名稱"、"圖片名稱1"、"圖片名稱2"等等

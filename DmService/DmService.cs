@@ -27,23 +27,6 @@ public class DmService
         _width = Width;
     }
 
-
-    #region win32api
-    [DllImport("User32.dll", EntryPoint = "FindWindow")]
-    public extern static int FindWindow(string lpClassName, string lpWindowName);
-
-    [DllImport("User32.dll", EntryPoint = "FindWindowEx")]
-    public static extern int FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpClassName, string lpWindowName);
-    [DllImport("shell32.dll")]
-    public static extern IntPtr ShellExecute(IntPtr hwnd,  //窗口句柄
-       string lpOperation,   //指定要進行的操作
-       string lpFile,        //要執行的程序、要瀏覽的文件夾或者網址
-       string lpParameters,  //若lpFile參數是一個可執行程序，則此參數指定命令行參數
-       string lpDirectory,   //指定默認目錄
-       int nShowCmd          //若lpFile參數是一個可執行程序，則此參數指定程序窗口的初始顯示方式(參考如下枚舉)
-     );
-    #endregion
-
     /// <summary>
     /// 綁定視窗
     /// </summary>
@@ -58,6 +41,15 @@ public class DmService
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
+
+    public int FindWindow(string lpClassName, string lpWindowName)
+    {
+        return WindowHelper.FindWindow(lpClassName,lpWindowName);
+    }
+    public int FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpClassName, string lpWindowName)
+    {
+        return WindowHelper.FindWindowEx(hwndParent, hwndChildAfter, lpClassName,lpWindowName);
+    }
     public bool SetPath(string? path)
     {
         if (string.IsNullOrEmpty(path))
@@ -318,5 +310,25 @@ public class DmService
     }
     #endregion
 
+    /// <summary>
+    /// Win32Api，原生方法比Dm還快
+    /// </summary>
+    public static class WindowHelper
+    {
+        [DllImport("User32.dll", EntryPoint = "FindWindow")]
+        public extern static int FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("User32.dll", EntryPoint = "FindWindowEx")]
+        public static extern int FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpClassName, string lpWindowName);
+        [DllImport("shell32.dll")]
+        public static extern IntPtr ShellExecute(IntPtr hwnd,  //窗口句柄
+           string lpOperation,   //指定要進行的操作
+           string lpFile,        //要執行的程序、要瀏覽的文件夾或者網址
+           string lpParameters,  //若lpFile參數是一個可執行程序，則此參數指定命令行參數
+           string lpDirectory,   //指定默認目錄
+           int nShowCmd          //若lpFile參數是一個可執行程序，則此參數指定程序窗口的初始顯示方式(參考如下枚舉)
+         );
+        
+    }
 
 }

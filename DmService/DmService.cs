@@ -4,32 +4,31 @@ using System.Runtime.InteropServices;
 
 public class DmService
 {
-    public DmService(int windowsWidth=960,int windowsHeight=540,bool showError = false,string? path=null)
+    public int re = -1;
+    public object intX = -1;
+    public object intY = -1;
+    public int X => (int)intX;
+    public int Y => (int)intY;
+    public dmsoft Dm;
+    private int _width;
+    private int _height;
+    public DmService(int Width = 960, int Height = 540, bool showError = false, string? path = null, string? dict = null)
     {
+
         Dm = new dmsoft();
-        if (path == null)
-        {
-            SetPath();
-        }
-        else
-        {
-            SetPath(path);
-        }
-        SetDict();
+
+        SetPath(path);
+        SetDict(dict);
         if (showError == false)
         {
             Dm.SetShowErrorMsg(0);
         }
-        _windowsHeight = windowsHeight;
-        _windowsWidth = windowsWidth;
+        _height = Height;
+        _width = Width;
     }
-    private int _windowsWidth;
-    private int _windowsHeight;
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
-    public const uint WM_CLOSE = 0x0010;
 
+    #region win32api
     [DllImport("User32.dll", EntryPoint = "FindWindow")]
     public extern static int FindWindow(string lpClassName, string lpWindowName);
 
@@ -43,77 +42,61 @@ public class DmService
        string lpDirectory,   //指定默認目錄
        int nShowCmd          //若lpFile參數是一個可執行程序，則此參數指定程序窗口的初始顯示方式(參考如下枚舉)
      );
-    //[DllImport("ole32.dll")]
-    //private static extern int CoInitialize(IntPtr pvReserved);
+    #endregion
 
-    public int re;
-    //public int tmpTime = 0;
-    public object intX;
-    public object intY;
-    public int X => (int)intX;
-    public int Y => (int)intY;
-
-    //public string colection;
-    public dmsoft Dm;
-
-    //private bool waitIcon = true;
-
-    public void Register()
-    {
-
-        // 使用 Type.GetTypeFromProgID 方法獲取 COM 物件的類型
-        //Type dmType = Type.GetTypeFromProgID("dm.dmsoft");
-
-        // 使用 dynamic 關鍵字創建 COM 物件的實例
-        //dynamic dm = Activator.CreateInstance(dmType);
-
-        //dm = new Dm.dmsoft();
-        //int result = CoInitialize(IntPtr.Zero);
-        //dm = new Dm.dmsoft();
-        //re = Dm.SetPath(path);
-        //dm.SetDict(0, "dm_soft部隊.txt");
-    }
-    public bool IsDisplayDead(int sec = 5)
-    {
-        return Dm.IsDisplayDead(0, 0, _windowsWidth, _windowsHeight, sec) == 1 ? true : false;
-    }
-
-    public void Close(string windowName)
-    {
-        // 用窗口的标题来找到窗口句柄（HWND）
-        IntPtr hWnd = FindWindow("LDPlayerMainFrame", windowName);
-
-        if (hWnd != IntPtr.Zero)
-        {
-            //Console.WriteLine("Window found, closing it.");
-
-            // 发送一个 WM_CLOSE 消息来关闭窗口
-            SendMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-        }
-    }
+    /// <summary>
+    /// 綁定視窗
+    /// </summary>
+    /// <param name="hwnd"></param>
+    /// <returns></returns>
     public bool BindWindow(int hwnd)
     {
-        return Dm.BindWindow(hwnd, "gdi", "windows", "windows", 0) == 1 ? true : false;
+        return Dm.BindWindow(hwnd, "gdi", "windows", "windows", 0) == 1;
     }
+    /// <summary>
+    /// 設定資源路徑
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public bool SetPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            path = baseDirectory + "\\Resources";
+        }
+        Console.WriteLine("SetPath: " + path);
+        return Dm.SetPath(path) == 1;
+    }
+    /// <summary>
+    /// 設定字典
+    /// </summary>
+    /// <param name="dict"></param>
+    public void SetDict(string? dict)
+    {
+        if (string.IsNullOrEmpty(dict))
+        {
+            dict = "dm_soft";
+        }
 
-    public void SetPath(string path)
-    {
-        //var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        Dm.SetPath(path);
-    }
-    public void SetPath()
-    {
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var path = baseDirectory + "\\Resources";
-        //Console.WriteLine("path " + path);
-        Dm.SetPath(path);
-    }
-    public void SetDict(string dict = "dm_soft")
-    {
         Dm.SetDict(0, dict + ".txt");
     }
-
-    public void Capture(string bmp)
+    #region 其他方法
+    /// <summary>
+    /// 是否卡死
+    /// </summary>
+    /// <param name="sec"></param>
+    /// <returns></returns>
+    public bool IsDisplayDead(int sec = 5)
+    {
+        return Dm.IsDisplayDead(0, 0, _width, _height, sec) == 1;
+    }
+    /// <summary>
+    /// 截圖，如果大於limit則不截圖
+    /// </summary>
+    /// <param name="bmp"></param>
+    /// <param name="limit"></param>
+    public void Capture(string bmp, int limit = 100)
     {
         int index = 0;
         var currentFile = bmp + ".bmp";
@@ -122,43 +105,54 @@ public class DmService
             index++;
             currentFile = $"{bmp}{index}.bmp";
         }
-
-        Dm.Capture(0, 0, 960, 540, currentFile);
+        if (index > limit)
+        {
+            Console.WriteLine($"圖片超過{limit}張");
+            return;
+        }
+        Dm.Capture(0, 0, _width, _height, currentFile);
     }
 
+    /// <summary>
+    /// 取色
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns></returns>
     public string GetColor(int x, int y)
     {
         return Dm.GetColor(x, y);
-        //dm.ger
     }
+    #endregion
 
+    #region 圖片文字
     public bool FindStrB(string str, string colors, double sim = 0.7)
     {
-        return Dm.FindStr(0, 0, _windowsWidth, _windowsHeight, str, colors, sim, out intX, out intY) >= 0 ? true : false;
+        return Dm.FindStr(0, 0, _width, _height, str, colors, sim, out intX, out intY) >= 0;
     }
     public bool FindStrB(int x1, int y1, int x2, int y2, string str, string colors, double sim = 0.7)
     {
-        return Dm.FindStr(x1, y1, x2, y2, str, colors, sim, out intX, out intY) >= 0 ? true : false;
+        return Dm.FindStr(x1, y1, x2, y2, str, colors, sim, out intX, out intY) >= 0;
     }
-    public int FindPic(string mybmps, double sim = 0.7, bool traversal = false)
+    public int FindPic(string bmps, double sim = 0.7, bool traversal = false)
     {
-        var bmp = ProcessBmpString(mybmps, traversal);
+        var bmp = ProcessBmpString(bmps, traversal);
 
-        return Dm.FindPic(0, 0, _windowsWidth, _windowsHeight, bmp, "000000", sim, 0, out intX, out intY);
+        return Dm.FindPic(0, 0, _width, _height, bmp, "000000", sim, 0, out intX, out intY);
     }
-    public bool FindPicB(string mybmps, bool click = false, double sim = 0.7, bool traversal = false)
+    public bool FindPicB(string bmps, bool click = false, double sim = 0.7, bool traversal = false)
     {
-        var bmp = ProcessBmpString(mybmps, traversal);
-        var re = Dm.FindPic(0, 0, _windowsWidth, _windowsHeight, bmp, "000000", sim, 0, out intX, out intY) >= 0 ? true : false;
+        var bmp = ProcessBmpString(bmps, traversal);
+        var re = Dm.FindPic(0, 0, _width, _height, bmp, "000000", sim, 0, out intX, out intY) >= 0 ? true : false;
         if (re && click)
         {
             MCS();
-        }   
+        }
         return re;
     }
-    public bool FindPicB(int x1, int y1, int x2, int y2, string mybmps, bool click = false, double sim = 0.7, bool traversal = false)
+    public bool FindPicB(int x1, int y1, int x2, int y2, string bmps, bool click = false, double sim = 0.7, bool traversal = false)
     {
-        var bmp = ProcessBmpString(mybmps, traversal);
+        var bmp = ProcessBmpString(bmps, traversal);
         var re = Dm.FindPic(x1, y1, x2, y2, bmp, "000000", sim, 0, out intX, out intY) >= 0 ? true : false;
         if (re && click)
         {
@@ -167,19 +161,19 @@ public class DmService
         return re;
     }
 
-    public int FindPic(int x1, int y1, int x2, int y2, string mybmps, double sim = 0.7, bool traversal = false)
+    public int FindPic(int x1, int y1, int x2, int y2, string bmps, double sim = 0.7, bool traversal = false)
     {
-        var bmp = ProcessBmpString(mybmps, traversal);
+        var bmp = ProcessBmpString(bmps, traversal);
         return Dm.FindPic(x1, y1, x2, y2, bmp, "000000", sim, 0, out intX, out intY);
     }
-    public bool FindPicR(string mybmps, bool click = false, int time = 10, double sim = 0.7, bool traversal = false)
+    public bool FindPicR(string bmps, bool click = false, int time = 10, double sim = 0.7, bool traversal = false)
     {
-        var bmp = ProcessBmpString(mybmps, traversal);
+        var bmp = ProcessBmpString(bmps, traversal);
 
         var tmptime = 0;
         while (true)
         {
-            if (Dm.FindPic(0, 0, _windowsWidth, _windowsHeight, bmp, "000000", sim, 0, out intX, out intY) >= 0)
+            if (Dm.FindPic(0, 0, _width, _height, bmp, "000000", sim, 0, out intX, out intY) >= 0)
             {
                 if (click)
                 {
@@ -187,41 +181,45 @@ public class DmService
                 }
                 return false;
             }
-
-            Thread.Sleep(1000);
             tmptime++;
             if (tmptime > time)
             {
                 return true;
             }
+
+            Thread.Sleep(1000);
+
         }
     }
 
-    public string ProcessBmpString(string? mybmps, bool traversal)
+    public string ProcessBmpString(string? bmps, bool traversal)
     {
-        if (traversal && mybmps.Contains("|"))
+        if (string.IsNullOrEmpty(bmps))
         {
-            throw new Exception(mybmps + " 圖片判斷錯誤: 多張遍歷");
-        }
-        if (string.IsNullOrEmpty(mybmps))
-        {
-            throw new Exception(mybmps + " IsNullOrEmpty");
+            Console.WriteLine("IsNullOrEmpty");
+            throw new Exception(bmps + " IsNullOrEmpty");
         }
 
-        if (mybmps.Contains(".bmp"))
+        if (traversal && bmps.Contains("|"))
         {
-            mybmps.Replace(".bmp", "");
-            Console.WriteLine(mybmps + "包含bmp");
+            Console.WriteLine(bmps + " 圖片判斷錯誤: 多張遍歷");
+            traversal = false;
+        }
+
+        if (bmps.Contains(".bmp"))
+        {
+            bmps.Replace(".bmp", "");
+            Console.WriteLine(bmps + "包含bmp");
         }
 
         string? bmp;
         if (traversal)
         {
-            bmp = Traversal(mybmps);
+            bmp = Traversal(bmps);
         }
-        else if (mybmps.Contains("|"))
+        else if (bmps.Contains("|"))
         {
-            var tmp = mybmps.Split("|");
+            var tmp = bmps.Split("|");
             for (int i = 0; i < tmp.Length; i++)
             {
                 tmp[i] += ".bmp";
@@ -231,20 +229,37 @@ public class DmService
         }
         else
         {
-            bmp = (mybmps + ".bmp");
+            bmp = (bmps + ".bmp");
         }
         return bmp;
     }
-
-
-
-
-    private Random random = new Random();
-
-    private int GetRandomNumberMove()
+    private static string basePath = AppDomain.CurrentDomain.BaseDirectory + "Resources";
+    private string Traversal(string baseFilename)
     {
-        return random.Next(0, 6); // 返回0到5的隨機整數
+        List<string> filenames = new List<string>();
+        //string basePath = AppDomain.CurrentDomain.BaseDirectory;
+
+        int index = 0;
+        string currentFile = baseFilename + ".bmp";
+        while (File.Exists(Path.Combine(basePath, currentFile)))
+        {
+            filenames.Add(currentFile);
+            index++;
+            currentFile = $"{baseFilename}{index}.bmp";
+        }
+
+        return string.Join("|", filenames);
     }
+
+    #endregion
+
+    #region 滑鼠
+    /// <summary>
+    /// 長按滑鼠
+    /// </summary>
+    /// <param name="intX"></param>
+    /// <param name="intY"></param>
+    /// <param name="sec"></param>
     public void MDSU(int intX, int intY, int sec = 2)
     {
         Dm.MoveTo(intX + GetRandomNumberMove(), intY + GetRandomNumberMove());
@@ -271,74 +286,37 @@ public class DmService
         Dm.LeftClick();
         Thread.Sleep((int)(sec * 1000));
     }
-    public void MCSEx(int intXex, int intYex, int sec = 2)
+    public void MCSEx(int intXEx, int intYEx, int sec = 2)
     {
-        //Thread.Sleep(sec2 * 1000);
-        Dm.MoveTo(X + intXex + GetRandomNumberMove(), Y + intYex + GetRandomNumberMove());
+        Dm.MoveTo(X + intXEx + GetRandomNumberMove(), Y + intYEx + GetRandomNumberMove());
         Dm.LeftClick();
-        //Task.Delay(sec * 1000).Wait();
         Thread.Sleep(sec * 1000);
     }
     public void MCS()
     {
         Dm.MoveTo(X + GetRandomNumberMove(), Y + GetRandomNumberMove());
         Dm.LeftClick();
-        //Task.Delay(2000).Wait();
         Thread.Sleep(2000);
     }
     public void MCS(int sec)
     {
         Dm.MoveTo(X + GetRandomNumberMove(), Y + GetRandomNumberMove());
         Dm.LeftClick();
-        //Task.Delay(2000).Wait();
         Thread.Sleep(sec * 1000);
     }
     public void MCS(double sec)
     {
         Dm.MoveTo(X + GetRandomNumberMove(), Y + GetRandomNumberMove());
         Dm.LeftClick();
-        //Task.Delay(2000).Wait();
         Thread.Sleep((int)(sec * 1000));
     }
-    private static string basePath = AppDomain.CurrentDomain.BaseDirectory + "Resources";
-    private static string Traversal(string baseFilename)
+
+    private Random random = new Random();
+    private int GetRandomNumberMove()
     {
-        List<string> filenames = new List<string>();
-        //string basePath = AppDomain.CurrentDomain.BaseDirectory;
-
-        int index = 0;
-        string currentFile = baseFilename + ".bmp";
-        while (File.Exists(Path.Combine(basePath, currentFile)))
-        {
-            filenames.Add(currentFile);
-            index++;
-            currentFile = $"{baseFilename}{index}.bmp";
-        }
-
-        return string.Join("|", filenames);
+        return random.Next(0, 6); // 返回0到5的隨機整數
     }
+    #endregion
 
-
-
-    //static void Shuffle<T>(IList<T> list)
-    //{
-    //    Random random = new Random();
-
-    //    for (int i = list.Count - 1; i > 0; i--)
-    //    {
-    //        int j = random.Next(i + 1);
-    //        T temp = list[i];
-    //        list[i] = list[j];
-    //        list[j] = temp;
-    //    }
-    //}
-
-
-    protected string RandomChoice(string s)
-    {
-        var random = new Random();
-        int index = random.Next(s.Length);
-        return s[index].ToString();
-    }
 
 }

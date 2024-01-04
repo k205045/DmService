@@ -12,6 +12,7 @@ public class DmService
     public dmsoft Dm;
     private int _width;
     private int _height;
+    private string? ResourcesPath;
     public DmService(int Width = 960, int Height = 540, bool showError = false, string? path = null, string? dict = null)
     {
 
@@ -36,12 +37,6 @@ public class DmService
     {
         return Dm.BindWindow(hwnd, "gdi", "windows", "windows", 0) == 1;
     }
-    /// <summary>
-    /// 設定資源路徑
-    /// </summary>
-    /// <param name="path"></param>
-    /// <returns></returns>
-
     public int FindWindow(string lpClassName, string lpWindowName)
     {
         return WindowHelper.FindWindow(lpClassName,lpWindowName);
@@ -50,15 +45,21 @@ public class DmService
     {
         return WindowHelper.FindWindowEx(hwndParent, hwndChildAfter, lpClassName,lpWindowName);
     }
+    /// <summary>
+    /// 設定資源路徑
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
     public bool SetPath(string? path)
     {
         if (string.IsNullOrEmpty(path))
         {
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            path = baseDirectory + "\\Resources";
+            path =Path.Combine(baseDirectory + "Resources");
         }
-        Console.WriteLine("SetPath: " + path);
-        return Dm.SetPath(path) == 1;
+        ResourcesPath=path;
+        Console.WriteLine("SetPath: " + ResourcesPath);
+        return Dm.SetPath(ResourcesPath) == 1;
     }
     /// <summary>
     /// 設定字典
@@ -92,7 +93,7 @@ public class DmService
     {
         int index = 0;
         var currentFile = bmp + ".bmp";
-        while (File.Exists(Path.Combine(basePath, currentFile)))
+        while (File.Exists(Path.Combine(ResourcesPath, currentFile)))
         {
             index++;
             currentFile = $"{bmp}{index}.bmp";
@@ -225,7 +226,6 @@ public class DmService
         }
         return bmp;
     }
-    private static string basePath = AppDomain.CurrentDomain.BaseDirectory + "Resources";
     private string Traversal(string baseFilename)
     {
         List<string> filenames = new List<string>();
@@ -233,7 +233,7 @@ public class DmService
 
         int index = 0;
         string currentFile = baseFilename + ".bmp";
-        while (File.Exists(Path.Combine(basePath, currentFile)))
+        while (File.Exists(Path.Combine(ResourcesPath, currentFile)))
         {
             filenames.Add(currentFile);
             index++;
